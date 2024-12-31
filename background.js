@@ -3,8 +3,8 @@ const getFormat = (url) => url.match(/(?<=format=)[a-z0-9]+/) ?? 'jpg';
 const directory = 'twitter-save';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'save') {
-    const { userName, avatar, postId, html, time, text, images } = request.data;
+  if (request.action === 'post') {
+    const { userName, postId, html, time, text, images } = request.data;
 
     for (const filename of [
       `${directory}/`,
@@ -36,14 +36,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         conflictAction: 'overwrite',
       });
 
-    chrome.downloads.download({
-      url: avatar,
-      filename: `${directory}/${userName}/${postId}/avatar.${getFormat(
-        avatar,
-      )}`,
-      conflictAction: 'overwrite',
-    });
-
     images.forEach((url, i) => {
       chrome.downloads.download({
         url,
@@ -55,5 +47,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
 
     sendResponse({ message: `saved ${userName}/${postId}` });
+  } else if (request.action === 'user') {
+    const { userName, date, profile } = request.data;
+
+    for (const filename of [
+      `${directory}/`,
+      `${directory}/${userName}/`,
+      `${directory}/${userName}/profile/`,
+    ])
+      chrome.downloads.download({
+        url: 'data:text/plain;charset=utf-8,',
+        filename,
+        conflictAction: 'overwrite',
+      });
+
+    chrome.downloads.download({
+      url:
+        'data:text/json;charset=utf-8,' +
+        encodeURIComponent(JSON.stringify(profile, null, 2)),
+      filename: `${directory}/${userName}/profile/${date}.json`,
+      conflictAction: 'overwrite',
+    });
+
+    sendResponse({ message: `saved ${userName}` });
   }
 });
