@@ -3,7 +3,7 @@ let repeated = 0;
 
 setInterval(() => {
   if (urlLastSucceeded === document.location.href)
-    if (3 <= repeated) return;
+    if (4 <= repeated) return;
     else repeated++;
   else {
     repeated = 0;
@@ -81,4 +81,4 @@ setInterval(() => {
       console.log(e);
     }
   }
-}, 1000 / 1.5);
+}, 1000 / 2);
