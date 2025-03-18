@@ -3,7 +3,7 @@ let repeated = 0;
 
 setInterval(() => {
   if (urlLastSucceeded === document.location.href)
-    if (4 <= repeated) return;
+    if (3 <= repeated) return;
     else repeated++;
   else {
     repeated = 0;
@@ -20,24 +20,42 @@ setInterval(() => {
 
     try {
       const html = document.documentElement.outerHTML;
+
+      const id = document
+        .querySelector(`button[aria-describedby][aria-label][role="button"]`)
+        .dataset.testid.split('-')[0];
+
       const text = tweet.querySelector(
         '[data-testid="tweetText"]',
       )?.textContent;
-      const time = tweet.querySelector('time').getAttribute('datetime');
+
+      const date = tweet.querySelector('time').getAttribute('datetime');
+
       const images = [
         ...tweet.querySelectorAll('[data-testid="tweetPhoto"] img'),
       ].map((img) => img.getAttribute('src'));
+
+      const bio = [
+        ...document.querySelectorAll('li[data-testid="UserCell"] div span'),
+      ].findLast(() => true)?.innerText;
+
+      const displayName = document.querySelector(
+        'article[data-testid="tweet"] div[data-testid="User-Name"] div',
+      ).textContent;
 
       chrome.runtime.sendMessage(
         {
           action: 'post',
           data: {
+            id,
             userName,
+            displayName,
+            bio,
             postId,
-            html,
-            time,
+            date,
             text,
             images,
+            html,
           },
         },
         (response) => {
@@ -56,15 +74,23 @@ setInterval(() => {
   if (matchUser) {
     try {
       const [, userName] = matchUser;
+
+      const id = document
+        .querySelector(`button[aria-describedby][aria-label][role="button"]`)
+        .dataset.testid.split('-')[0];
+      console.log(id);
+
       for (const e of document.querySelectorAll(
         '[data-testid="UserProfileSchema-test"]',
       )) {
         const profile = JSON.parse(e.innerHTML);
+
         if (profile?.mainEntity?.additionalName === userName)
           chrome.runtime.sendMessage(
             {
               action: 'user',
               data: {
+                id,
                 userName,
                 profile,
                 date: new Date().toISOString().replace(/:/g, '-'),
@@ -81,4 +107,4 @@ setInterval(() => {
       console.log(e);
     }
   }
-}, 1000 / 2);
+}, 3000);

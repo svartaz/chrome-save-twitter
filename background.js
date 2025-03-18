@@ -5,69 +5,92 @@ const directory = 'twitter-save';
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.action === 'post') {
-      const { userName, postId, html, time, text, images } = request.data;
+      const {
+        id,
+        userName,
+        displayName,
+        bio,
+        postId,
+        html,
+        date,
+        text,
+        images,
+      } = request.data;
 
       for (const filename of [
         `${directory}/`,
-        `${directory}/${userName}/`,
-        `${directory}/${userName}/${postId}/`,
+        `${directory}/${id}/`,
+        `${directory}/${id}/${postId}/`,
       ])
         chrome.downloads.download({
           url: 'data:text/plain;charset=utf-8,',
           filename,
-          conflictAction: 'overwrite',
+          conflictAction: 'uniquify',
         });
 
       chrome.downloads.download({
         url: 'data:text/html;charset=utf-8,' + encodeURIComponent(html),
-        filename: `${directory}/${userName}/${postId}/index.html`,
-        conflictAction: 'overwrite',
+        filename: `${directory}/${id}/${postId}/index.html`,
+        conflictAction: 'uniquify',
       });
 
       chrome.downloads.download({
-        url: 'data:text/plain;charset=utf-8,' + encodeURIComponent(time),
-        filename: `${directory}/${userName}/${postId}/time.txt`,
-        conflictAction: 'overwrite',
+        url:
+          'data:text/json;charset=utf-8,' +
+          encodeURIComponent(
+            JSON.stringify(
+              {
+                id: postId,
+                user: {
+                  id,
+                  name: userName,
+                  displayName,
+                  bio,
+                },
+                date,
+                text,
+                save: {
+                  version: '2025-03-17',
+                  date: new Date().toISOString(),
+                },
+              },
+              null,
+              2,
+            ),
+          ),
+        filename: `${directory}/${id}/${postId}/data.json`,
+        conflictAction: 'uniquify',
       });
-
-      if (text)
-        chrome.downloads.download({
-          url: 'data:text/plain;charset=utf-8,' + encodeURIComponent(text),
-          filename: `${directory}/${userName}/${postId}/text.txt`,
-          conflictAction: 'overwrite',
-        });
 
       images.forEach((url, i) => {
         chrome.downloads.download({
           url,
-          filename: `${directory}/${userName}/${postId}/photo-${i}.${getFormat(
-            url,
-          )}`,
-          conflictAction: 'overwrite',
+          filename: `${directory}/${id}/${postId}/photo-${i}.${getFormat(url)}`,
+          conflictAction: 'uniquify',
         });
       });
 
       sendResponse({ message: `saved ${userName}/${postId}` });
     } else if (request.action === 'user') {
-      const { userName, date, profile } = request.data;
+      const { id, userName, date, profile } = request.data;
 
       for (const filename of [
         `${directory}/`,
-        `${directory}/${userName}/`,
-        `${directory}/${userName}/profile/`,
+        `${directory}/${id}/`,
+        `${directory}/${id}/profile/`,
       ])
         chrome.downloads.download({
           url: 'data:text/plain;charset=utf-8,',
           filename,
-          conflictAction: 'overwrite',
+          conflictAction: 'uniquify',
         });
 
       chrome.downloads.download({
         url:
           'data:text/json;charset=utf-8,' +
           encodeURIComponent(JSON.stringify(profile, null, 2)),
-        filename: `${directory}/${userName}/profile/${date}.json`,
-        conflictAction: 'overwrite',
+        filename: `${directory}/${id}/profile/${date}.json`,
+        conflictAction: 'uniquify',
       });
 
       sendResponse({ message: `saved ${userName}` });
