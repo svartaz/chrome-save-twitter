@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "twitter-save",
+  "name": "save twitter",
   "version": "1.0",
   "description": "save text and images on twitter.com",
   "permissions": ["activeTab", "storage", "downloads", "tabs", "scripting"],
