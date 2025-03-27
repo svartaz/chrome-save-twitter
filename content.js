@@ -21,9 +21,14 @@ setInterval(() => {
     try {
       const html = document.documentElement.outerHTML;
 
-      const id = document
-        .querySelector(`button[aria-describedby][aria-label][role="button"]`)
-        .dataset.testid.split('-')[0];
+      const id =
+        document
+          .querySelector(`button[aria-describedby][aria-label][role="button"]`)
+          .dataset.testid.split('-')[0] ??
+        JSON.parse(
+          document.querySelector('script[data-testid="UserProfileSchema-test"]')
+            .innerHTML,
+        ).mainEntity.identifier;
 
       const text = tweet.querySelector(
         '[data-testid="tweetText"]',
