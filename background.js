@@ -1,6 +1,6 @@
 const getFormat = (url) => url.match(/(?<=format=)[a-z0-9]+/) ?? 'jpg';
 
-const directory = 'twitter-save';
+const directory = 'twitter.com';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
