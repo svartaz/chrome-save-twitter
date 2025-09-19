@@ -3,14 +3,14 @@ let repeated = 0;
 
 setInterval(() => {
   if (urlLastSucceeded === document.location.href)
-    if (3 <= repeated) return;
+    if (2 <= repeated) return;
     else repeated++;
   else {
     repeated = 0;
   }
 
   const matchPost = document.location.href.match(
-    /^https:\/\/x.com\/(\w+)\/status\/(\d+)/,
+    /^https:\/\/x.com\/(\w+)\/status\/(\d+)/
   );
   if (matchPost) {
     const [, userName, postId] = matchPost;
@@ -21,38 +21,38 @@ setInterval(() => {
     try {
       const html = document.documentElement.outerHTML;
 
-      const id =
+      const userId =
         document
           .querySelector(`button[aria-describedby][aria-label][role="button"]`)
-          .dataset.testid.split('-')[0] ??
+          ?.dataset.testid.split("-")[0] ??
         JSON.parse(
           document.querySelector('script[data-testid="UserProfileSchema-test"]')
-            .innerHTML,
+            ?.innerHTML
         ).mainEntity.identifier;
 
       const text = tweet.querySelector(
-        '[data-testid="tweetText"]',
+        '[data-testid="tweetText"]'
       )?.textContent;
 
-      const date = tweet.querySelector('time').getAttribute('datetime');
+      const date = tweet.querySelector("time").getAttribute("datetime");
 
       const images = [
-        ...tweet.querySelectorAll('[data-testid="tweetPhoto"] img'),
-      ].map((img) => img.getAttribute('src'));
+        ...tweet.querySelectorAll('[data-testid="tweetPhoto"] > img'),
+      ].map((img) => img.getAttribute("src"));
 
       const bio = [
         ...document.querySelectorAll('li[data-testid="UserCell"] div span'),
       ].findLast(() => true)?.innerText;
 
       const displayName = document.querySelector(
-        'article[data-testid="tweet"] div[data-testid="User-Name"] div',
+        'article[data-testid="tweet"] div[data-testid="User-Name"] div'
       ).textContent;
 
       chrome.runtime.sendMessage(
         {
-          action: 'post',
+          action: "status",
           data: {
-            id,
+            userId,
             userName,
             displayName,
             bio,
@@ -66,7 +66,7 @@ setInterval(() => {
         (response) => {
           console.log(response);
           urlLastSucceeded = document.location.href;
-        },
+        }
       );
 
       return;
@@ -80,32 +80,31 @@ setInterval(() => {
     try {
       const [, userName] = matchUser;
 
-      const id = document
+      const userId = document
         .querySelector(`button[aria-describedby][aria-label][role="button"]`)
-        .dataset.testid.split('-')[0];
-      console.log(id);
+        .dataset.testid.split("-")[0];
 
       for (const e of document.querySelectorAll(
-        '[data-testid="UserProfileSchema-test"]',
+        '[data-testid="UserProfileSchema-test"]'
       )) {
         const profile = JSON.parse(e.innerHTML);
 
         if (profile?.mainEntity?.additionalName === userName)
           chrome.runtime.sendMessage(
             {
-              action: 'user',
+              action: "user",
               data: {
-                id,
+                userId,
                 userName,
                 profile,
-                date: new Date().toISOString().replace(/:/g, '-'),
+                date: new Date().toISOString().replace(/:/g, "-"),
               },
             },
             (response) => {
               console.log(response);
               urlLastSucceeded = document.location.href;
               repeated = Number.MAX_SAFE_INTEGER;
-            },
+            }
           );
       }
     } catch (e) {

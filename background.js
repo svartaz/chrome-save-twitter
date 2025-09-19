@@ -1,101 +1,85 @@
-const getFormat = (url) => url.match(/(?<=format=)[a-z0-9]+/) ?? 'jpg';
+const version = "2025-09-19";
 
-const directory = 'twitter.com';
+const getFormat = (url) => url.match(/(?<=format=)[a-z0-9]+/) ?? "jpg";
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  try {
-    if (request.action === 'post') {
-      const {
-        id,
-        userName,
-        displayName,
-        bio,
-        postId,
-        html,
-        date,
-        text,
-        images,
-      } = request.data;
+const directory = "twitter.com";
 
-      for (const filename of [
-        `${directory}/`,
-        `${directory}/${id}/`,
-        `${directory}/${id}/${postId}/`,
-      ])
-        chrome.downloads.download({
-          url: 'data:text/plain;charset=utf-8,',
-          filename,
-          conflictAction: 'uniquify',
-        });
+const listener = async (request, sender, sendResponse) => {
+  if (request.action === "status") {
+    const {
+      userId,
+      userName,
+      displayName,
+      bio,
+      postId,
+      html,
+      date,
+      text,
+      images,
+    } = request.data;
 
-      chrome.downloads.download({
-        url: 'data:text/html;charset=utf-8,' + encodeURIComponent(html),
-        filename: `${directory}/${id}/${postId}/index.html`,
-        conflictAction: 'uniquify',
-      });
+    await chrome.downloads.download({
+      url: "data:text/html;charset=utf-8," + encodeURIComponent(html),
+      filename: `${directory}/${userId}/${postId}/index.html`,
+      conflictAction: "uniquify",
+    });
 
-      chrome.downloads.download({
-        url:
-          'data:text/json;charset=utf-8,' +
-          encodeURIComponent(
-            JSON.stringify(
-              {
-                id: postId,
-                user: {
-                  id,
-                  name: userName,
-                  displayName,
-                  bio,
-                },
-                date,
-                text,
-                save: {
-                  version: '2025-03-17',
-                  date: new Date().toISOString(),
-                },
+    console.log("2");
+    await chrome.downloads.download({
+      url:
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(
+          JSON.stringify(
+            {
+              id: postId,
+              user: {
+                id: userId,
+                name: userName,
+                displayName,
+                bio,
               },
-              null,
-              2,
-            ),
-          ),
-        filename: `${directory}/${id}/${postId}/data.json`,
-        conflictAction: 'uniquify',
+              date,
+              text,
+              save: {
+                version,
+                date: new Date().toISOString(),
+              },
+            },
+            null,
+            2
+          )
+        ),
+      filename: `${directory}/${userId}/${postId}/data.json`,
+      conflictAction: "uniquify",
+    });
+
+    console.log("3");
+    for (const [i, url] of images.entries()) {
+      await chrome.downloads.download({
+        url,
+        filename: `${directory}/${userId}/${postId}/photo-${i}.${getFormat(
+          url
+        )}`,
+        conflictAction: "uniquify",
       });
-
-      images.forEach((url, i) => {
-        chrome.downloads.download({
-          url,
-          filename: `${directory}/${id}/${postId}/photo-${i}.${getFormat(url)}`,
-          conflictAction: 'uniquify',
-        });
-      });
-
-      sendResponse({ message: `saved ${userName}/${postId}` });
-    } else if (request.action === 'user') {
-      const { id, userName, date, profile } = request.data;
-
-      for (const filename of [
-        `${directory}/`,
-        `${directory}/${id}/`,
-        `${directory}/${id}/profile/`,
-      ])
-        chrome.downloads.download({
-          url: 'data:text/plain;charset=utf-8,',
-          filename,
-          conflictAction: 'uniquify',
-        });
-
-      chrome.downloads.download({
-        url:
-          'data:text/json;charset=utf-8,' +
-          encodeURIComponent(JSON.stringify(profile, null, 2)),
-        filename: `${directory}/${id}/profile/${date}.json`,
-        conflictAction: 'uniquify',
-      });
-
-      sendResponse({ message: `saved ${userName}` });
     }
-  } catch (e) {
-    console.error(e.message);
+
+    console.log("background sendResponse status");
+    sendResponse(`saved ${userName}/${postId}`);
+  } else if (request.action === "user") {
+    const { userId, userName, date, profile } = request.data;
+
+    await chrome.downloads.download({
+      url:
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(JSON.stringify(profile, null, 2)),
+      filename: `${directory}/${userId}/profile/${date}.json`,
+      conflictAction: "uniquify",
+    });
+
+    console.log("background sendResponse user");
+    sendResponse(`saved ${userName}`);
   }
-});
+};
+
+chrome.runtime.onMessage.addListener(listener);
